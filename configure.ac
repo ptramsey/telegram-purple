@@ -30,6 +30,14 @@ AC_ARG_ENABLE([libwebp],
     AC_CHECK_LIB([webp], [WebPDecodeRGBA], [], [AC_MSG_ERROR([no libwebp found, try --disable-libwebp, but stickers won't be displayed in the chat])])
   ])
 
+AC_ARG_ENABLE([inline_images],
+  AS_HELP_STRING([--disable-inline-images], [Disable displaying stickers and photos in the chat]))
+  AS_IF([test "x$enable_inline_images" != "xno"], [
+    AC_DEFINE([ENABLE_INLINE_IMAGES], [1], [Define to allow displaying images and stickers inline in chat windows])
+  ], [
+    AC_WARN([Inline images are disabled.])
+  ])
+
 AC_SUBST([COPY_ICONS], [yes])
 AC_ARG_ENABLE([icons],
   AS_HELP_STRING([--disable-icons], [Don't copy the protocol icons for Pidgin. Only useful if you're using Finch of telepathy-haze. (Adium users shouldn't be using this build system at all.)]))

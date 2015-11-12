@@ -798,7 +798,7 @@ static void tgprpl_set_buddy_icon (PurpleConnection * gc, PurpleStoredImage * im
 */
 
 static gboolean tgprpl_can_receive_file (PurpleConnection * gc, const char *who) {
-  return TRUE;
+  return FALSE;
 }
 
 PurplePlugin *_telegram_protocol = NULL;

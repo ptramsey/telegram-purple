@@ -336,7 +336,10 @@ int tgp_msg_send (struct tgl_state *TLS, const char *message, tgl_peer_id_t to) 
   return tgp_msg_send_split (TLS, message, to);
 }
 
-static char *tgp_msg_photo_display (struct tgl_state *TLS, const char *filename, int *flags) {
+static char *tgp_msg_photo_display (struct tgl_state *TLS, tgl_peer_id_t from, const char *filename, int *flags) {
+  char *text = NULL;
+
+#ifdef ENABLE_INLINE_IMAGES
   connection_data *conn = TLS->ev_base;
   int img = p2tgl_imgstore_add_with_id (filename);
   if (img <= 0) {
@@ -345,13 +348,23 @@ static char *tgp_msg_photo_display (struct tgl_state *TLS, const char *filename,
   }
   used_images_add (conn, img);
   *flags |= PURPLE_MESSAGE_IMAGES;
-  return tgp_format_img (img);
+  text = tgp_format_img (img);
+#else
+  const char *txt_user = tgp_blist_peer_get_purple_name (TLS, from);
+
+  g_return_val_if_fail (txt_user, NULL);
+
+  text = g_strdup_printf (_("%s sent a photo."), txt_user);
+  *flags |= PURPLE_MESSAGE_SYSTEM;
+#endif
+
+  return text;
 }
 
 static char *tgp_msg_sticker_display (struct tgl_state *TLS, tgl_peer_id_t from, const char *filename, int *flags) {
   char *text = NULL;
   
-#ifdef HAVE_LIBWEBP
+#if defined(HAVE_LIBWEBP) && defined(ENABLE_INLINE_IMAGES)
   connection_data *conn = TLS->ev_base;
   int img = p2tgl_imgstore_add_with_id_webp ((char *) filename);
   if (img <= 0) {
@@ -410,7 +423,7 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
       case tgl_message_media_photo: {
         if (M->media.photo) {
           assert (C->data);
-          text = tgp_msg_photo_display (TLS, C->data, &flags);
+          text = tgp_msg_photo_display (TLS, M->from_id, C->data, &flags);
           if (str_not_empty (text)) {
             if (str_not_empty (M->media.caption)) {
               char *old = text;
@@ -428,7 +441,7 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
           text = tgp_msg_sticker_display (TLS, M->from_id, C->data, &flags);
         } else if (M->media.document->flags & TGLDF_IMAGE) {
           assert (C->data);
-          text = tgp_msg_photo_display (TLS, C->data, &flags);
+          text = tgp_msg_photo_display (TLS, M->from_id, C->data, &flags);
         } else {
           if (! tgp_our_msg(TLS, M)) {
             tgprpl_recv_file (conn->gc, tgp_blist_peer_get_purple_name (TLS, M->from_id), M);
@@ -451,7 +464,7 @@ static void tgp_msg_display (struct tgl_state *TLS, struct tgp_msg_loading *C) {
           text = tgp_msg_sticker_display (TLS, M->from_id, C->data, &flags);
         } if (M->media.encr_document->flags & TGLDF_IMAGE) {
           assert (C->data);
-          text = tgp_msg_photo_display (TLS, C->data, &flags);
+          text = tgp_msg_photo_display (TLS, M->from_id, C->data, &flags);
         } else {
           if (! tgp_our_msg(TLS, M)) {
             tgprpl_recv_file (conn->gc, tgp_blist_peer_get_purple_name (TLS, M->to_id), M);

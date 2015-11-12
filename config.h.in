@@ -1,5 +1,8 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define to allow displaying images and stickers inline in chat windows */
+#undef ENABLE_INLINE_IMAGES
+
 /* Define the gettext package to be used */
 #undef GETTEXT_PACKAGE
 
